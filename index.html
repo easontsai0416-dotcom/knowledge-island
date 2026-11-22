@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+<title>知識島</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+/* Layout: one centered column (max 720px) shaped like a phone deck; screens swap in place: home, lobby, battle, result, shop. */
+:root{
+  --bg:#E4F2F0; --surface:#FFFFFF; --surface-2:#D3E9E6; --ink:#0D2B33; --ink-2:#4B6A70; --line:#B7D5D2;
+  --sea:#0E7C8B; --sea-ink:#FFFFFF; --coral:#D9443A; --coral-ink:#FFFFFF; --sun:#F6B93B; --sun-ink:#3A2A00;
+  --palm:#238B5E; --ok-bg:#DDF3E7; --bad:#D43F3F; --bad-bg:#FBE1DE; --focus:#F6B93B;
+  --font-body:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --font-display:"Fredoka","Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#071E26; --surface:#0F323C; --surface-2:#14424F; --ink:#E6F6F3; --ink-2:#8FB5B8; --line:#1F5663;
+    --sea:#3CC0CF; --sea-ink:#04222A; --coral:#FF7A6B; --coral-ink:#2A0A07; --sun:#FFCB5C; --sun-ink:#3A2A00;
+    --palm:#4CC38A; --ok-bg:#12402D; --bad:#FF7B7B; --bad-bg:#4A1E1E; --focus:#FFCB5C; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#071E26; --surface:#0F323C; --surface-2:#14424F; --ink:#E6F6F3; --ink-2:#8FB5B8; --line:#1F5663;
+  --sea:#3CC0CF; --sea-ink:#04222A; --coral:#FF7A6B; --coral-ink:#2A0A07; --sun:#FFCB5C; --sun-ink:#3A2A00;
+  --palm:#4CC38A; --ok-bg:#12402D; --bad:#FF7B7B; --bad-bg:#4A1E1E; --focus:#FFCB5C; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--font-body);font-size:16px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px}
+.wrap{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:16px;min-width:0}
+h1,h2,h3,p{margin:0}
+h2{font-family:var(--font-display);font-size:22px;font-weight:700;text-wrap:balance}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.muted{color:var(--ink-2);font-size:14px}
+.label{font-size:12px;letter-spacing:.08em;color:var(--ink-2);font-weight:700}
+
+/* top bar */
+.bar-top{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.avatar{flex:none;width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;font-size:28px}
+.who{flex:1;min-width:150px;display:flex;flex-direction:column;gap:4px}
+.who input{font:inherit;font-weight:700;font-size:18px;background:transparent;color:var(--ink);border:0;border-bottom:2px dashed var(--line);padding:0 0 2px;width:100%;max-width:200px;border-radius:0}
+.lv{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2)}
+.xp{flex:1;max-width:140px;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.xp i{display:block;height:100%;background:var(--palm)}
+.coins{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 14px 6px 8px;font-family:var(--font-display);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
+.coin{width:24px;height:24px;flex:none}
+
+/* hero */
+.hero{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.hero h1{font-family:var(--font-display);font-size:clamp(44px,12vw,64px);line-height:1;font-weight:700;letter-spacing:.02em;color:var(--sea)}
+.hero p{margin-top:8px;color:var(--ink-2)}
+.hero svg{flex:none;width:clamp(96px,26vw,150px);height:auto}
+.f-sun{fill:var(--sun)}.f-sea{fill:var(--sea)}.f-palm{fill:var(--palm)}.f-sand{fill:var(--surface-2)}.s-trunk{stroke:var(--ink-2);fill:none}
+
+/* controls */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);padding:8px 14px;border-radius:99px;cursor:pointer;min-height:40px}
+.chip[aria-pressed="true"]{background:var(--sea);color:var(--sea-ink);border-color:var(--sea);font-weight:700}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--surface-2);border-radius:12px;padding:4px}
+.seg button{border:0;background:transparent;border-radius:9px;padding:10px;cursor:pointer;font-weight:700;color:var(--ink-2)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 0 var(--line)}
+.btn{border:0;border-radius:12px;padding:14px 20px;font-weight:700;cursor:pointer;background:var(--sea);color:var(--sea-ink);min-height:48px}
+.btn.go{background:var(--coral);color:var(--coral-ink);font-size:20px;font-family:var(--font-display);padding:16px 20px;width:100%;letter-spacing:.04em}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.row-btns{display:flex;gap:10px;flex-wrap:wrap}
+.row-btns .btn{flex:1 1 140px}
+.field{display:flex;gap:10px;flex-wrap:wrap}
+.field input{flex:1 1 120px;min-width:0;font:inherit;font-size:20px;font-family:var(--font-display);letter-spacing:.12em;text-transform:uppercase;padding:12px 14px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--ink)}
+.note{font-size:14px;color:var(--ink-2);background:var(--surface-2);border-radius:10px;padding:10px 12px}
+.err{font-size:14px;color:var(--bad);font-weight:500}
+.stats{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;color:var(--ink-2)}
+.stats b{color:var(--ink);font-family:var(--font-display);font-size:18px}
+.rules{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.rules div{background:var(--surface-2);border-radius:10px;padding:10px 4px}
+.rules b{display:block;font-family:var(--font-display);font-size:22px;color:var(--sea)}
+.rules span{font-size:12px;color:var(--ink-2)}
+
+/* lobby */
+.code{font-family:var(--font-display);font-size:40px;letter-spacing:.2em;font-weight:700;color:var(--sea)}
+.plist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.plist li{display:flex;align-items:center;gap:12px;background:var(--surface-2);border-radius:12px;padding:8px 12px}
+.plist .avatar{width:40px;height:40px;font-size:24px;background:var(--surface)}
+.tag{font-size:12px;font-weight:700;background:var(--sun);color:var(--sun-ink);border-radius:99px;padding:2px 8px;margin-left:8px}
+
+/* battle */
+.hud{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.hud .pill{background:var(--surface-2);border-radius:99px;padding:4px 12px;font-size:14px;font-weight:700}
+.score{font-family:var(--font-display);font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.phase{display:inline-block;border-radius:8px;padding:4px 12px;font-weight:900;letter-spacing:.06em}
+.phase.look{background:var(--sun);color:var(--sun-ink)}
+.phase.race{background:var(--coral);color:var(--coral-ink)}
+.timer{display:flex;align-items:center;gap:12px}
+.track{flex:1;height:14px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.fill{height:100%;background:var(--sea);transform-origin:left center;transform:scaleX(1)}
+.fill.low{background:var(--coral)}
+#tm{font-family:var(--font-display);font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;min-width:3.6ch;text-align:right}
+.q{font-size:clamp(20px,5.2vw,26px);font-weight:700;line-height:1.55;text-wrap:pretty;overflow-wrap:anywhere}
+.opts{display:grid;gap:10px;grid-template-columns:1fr}
+@media (min-width:560px){.opts{grid-template-columns:1fr 1fr}}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px;min-height:60px;border-radius:12px;border:2px solid var(--line);background:var(--surface);cursor:pointer;min-width:0;overflow-wrap:anywhere}
+.opt .L{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-family:var(--font-display);font-weight:700}
+.opt:active:not([disabled]){transform:scale(.985)}
+.opt.sel{border-color:var(--sea);background:var(--surface-2)}
+.opt.dim{opacity:.55}
+.opt.right{border-color:var(--palm);background:var(--ok-bg);opacity:1}
+.opt.wrong{border-color:var(--bad);background:var(--bad-bg);opacity:1}
+.opt.mask{cursor:default;border-style:dashed}
+.sk{display:block;height:12px;width:60%;border-radius:99px;background:var(--surface-2)}
+.live{font-size:14px;color:var(--ink-2)}
+.live b{font-family:var(--font-display);font-size:20px;color:var(--coral);font-variant-numeric:tabular-nums}
+.banner{border-radius:12px;padding:12px 14px;font-weight:700}
+.banner.ok{background:var(--ok-bg);color:var(--ink)}
+.banner.no{background:var(--bad-bg);color:var(--ink)}
+.count{text-align:center;padding:24px 0}
+.count b{display:block;font-family:var(--font-display);font-size:96px;line-height:1;color:var(--coral)}
+
+/* standings */
+.stand{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.stand li{display:grid;grid-template-columns:22px 28px minmax(60px,110px) 1fr auto auto;align-items:center;gap:8px;font-size:14px}
+.stand .rk{font-family:var(--font-display);font-weight:700;color:var(--ink-2)}
+.stand .av{font-size:20px;text-align:center}
+.stand .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stand .nm em{font-style:normal;font-size:11px;font-weight:700;background:var(--sea);color:var(--sea-ink);border-radius:99px;padding:1px 6px;margin-left:4px}
+.stand .trk{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.stand .trk i{display:block;height:100%;background:var(--sea);border-radius:99px}
+.stand li.me .trk i{background:var(--coral)}
+.stand b{font-family:var(--font-display);font-variant-numeric:tabular-nums;min-width:3.4ch;text-align:right}
+.stand .dl{font-size:12px;color:var(--palm);font-weight:700;min-width:3.6ch;font-variant-numeric:tabular-nums}
+
+/* result */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--surface-2);border-radius:12px;padding:12px 8px;text-align:center}
+.tile b{display:block;font-family:var(--font-display);font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile span{font-size:12px;color:var(--ink-2)}
+.qchips{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.qc{border-radius:10px;padding:8px 2px;text-align:center;font-size:12px;background:var(--surface-2);min-width:0}
+.qc b{display:block;font-family:var(--font-display);font-size:16px}
+.qc.ok{background:var(--ok-bg)}.qc.no{background:var(--bad-bg)}
+.up{background:var(--sun);color:var(--sun-ink);font-weight:900;border-radius:10px;padding:10px 12px;text-align:center}
+
+/* shop */
+.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.item .big{font-size:44px;line-height:1}
+.item .btn{padding:8px 12px;min-height:40px;width:100%;font-size:14px}
+.item.on{border:2px solid var(--sea)}
+.chip[disabled]{opacity:.45;cursor:not-allowed}
+.rankcard{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.rk-body{flex:1;min-width:180px;display:flex;flex-direction:column;gap:6px}
+.rk-name{font-family:var(--font-display);font-size:28px;font-weight:700;line-height:1.1}
+.ladder{display:flex;gap:6px;flex-wrap:wrap;width:100%}
+.ladder span{opacity:.3;display:block;line-height:0}
+.ladder span.on{opacity:1}
+.ladder span.cur{outline:2px solid var(--sun);outline-offset:2px;border-radius:50%}
+.bank{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.bank>div{flex:1;min-width:200px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap" id="app"></div>
+
+<script>
+"use strict";
+/* ============ 題庫 ============ */
+const SUBJ=[{k:"chi",n:"國文"},{k:"eng",n:"英語"},{k:"math",n:"數學"},{k:"tech",n:"科技"},{k:"bio",n:"生物"},{k:"his",n:"歷史"},{k:"civ",n:"公民"},{k:"geo",n:"地理"}];
+/* 每科 20 題：前 5 題簡單、中間 10 題中等、最後 5 題困難。格式：[題目, 選項A|B|C|D, 答案] */
+const DATA={
+chi:[
+[`下列「 」中的字，何者讀音與其他三者不同？`,`情不自「禁」|令行「禁」止|弱不「禁」風|忍俊不「禁」`,"B"],
+[`下列成語用字，何者完全正確？`,`默守成規|迫不急待|走投無路|變本加利`,"C"],
+[`「夏蚊成雷，私擬作群鶴舞空。」句中的「私」字意思為何？`,`自私|暗自|私人|偏心`,"B"],
+[`下列「 」中的詞語，何者屬於自謙的「謙詞」？`,`「寒舍」|「閣下」|「令尊」|「大作」`,"A"],
+[`「春風又綠江南岸」的「綠」由形容詞轉為動詞。下列何者有相同轉變？`,`「花」好月圓|「紅」了櫻桃|「青」山綠水|「白」雲蒼狗`,"B"],
+[`「我的日子滴在時間的流裡，沒有聲音，也沒有影子。」運用了哪種修辭？`,`誇飾|轉化|借代|映襯`,"B"],
+[`《論語》：「學而不思則罔，思而不學則殆。」強調什麼道理？`,`趁早學習|學思並重|思考優先|不恥下問`,"B"],
+[`關於「絕句」與「律詩」的共同點，下列何者正確？`,`皆須對仗|偶數句皆押韻|皆可配樂歌唱|每首皆為八句`,"B"],
+[`「他『雖然』家境清寒，『卻』從不自暴自棄。」這屬於哪種複句？`,`因果複句|假設複句|轉折複句|條件複句`,"C"],
+[`「昂首觀『之』，項為之強」句中的「之」指代什麼？`,`鶴|蚊子|雲彩|樹木`,"B"],
+[`陳之藩《謝天》：「得之於人者太多，出之於己者太少。」表達何種情懷？`,`抱怨不公|感恩謙卑|依賴他人|驕傲自滿`,"B"],
+[`下列詩句描寫的季節，何者與其他三者不同？`,`霜葉紅於二月花|月落烏啼霜滿天|映日荷花別樣紅|古道西風瘦馬`,"C"],
+[`下列成語使用，何者最恰當？`,`情節「引人入勝」|做事「首鼠兩端」很果斷|災區一片「欣欣向榮」|「春風化雨」地嚴厲責罵`,"A"],
+[`周敦頤《愛蓮說》：「牡丹之愛，宜乎眾矣。」暗諷世人追逐什麼？`,`隱居生活|富貴名利|園藝技術|隱逸高潔`,"B"],
+[`「人一能之，己百之；人十能之，己千之。」最適合勉勵哪種人？`,`驕傲的天才|勤能補拙者|體弱多病者|投機取巧者`,"B"],
+[`「刻舟求劍」這則寓言主要諷刺哪種人？`,`貪心不足|不知變通|粗心大意|杞人憂天`,"B"],
+[`下列文言句子的語氣判斷，何者錯誤？`,`「同予者何人？」——反詰|「其恕乎！」——推測|「爾安敢輕吾射！」——憤怒|「不亦說乎？」——懷疑`,"D"],
+[`倒裝句「何陋之有」還原後的正確語序為何？`,`有何陋|陋有何|之有何陋|何有之陋`,"A"],
+[`「君子之交淡若水，小人之交甘若醴。」強調君子之交重在什麼？`,`利益交換|道義長久|飲酒作樂|斷絕往來`,"B"],
+[`下列「 」中的字，前後意義完全相同的是哪一組？`,`項為之「強」／「強」詞奪理|默而「識」之／「識」途老馬|溫「故」而知新／無緣無「故」|「徒」勞無功／家「徒」四壁`,"D"]
+],
+eng:[
+[`Look at the boy. ______ name is Kevin, and ______ is my classmate.`,`He; his|His; he|Him; he|His; him`,"B"],
+[`A: Are you and Tom students? B: Yes, ______ are.`,`you|they|we|I`,"C"],
+[`There ______ two erasers and a ruler in my pencil case.`,`is|are|am|have`,"B"],
+[`My mother is ______ office worker.`,`a|an|the|X`,"B"],
+[`A: ______ is that tall woman? B: She is Ms. Chen.`,`What|Where|Who|How`,"C"],
+[`Look! The dog ______ after the cat right now.`,`runs|run|is running|are running`,"C"],
+[`Sam ______ to school by bus every morning.`,`go|goes|going|is going`,"B"],
+[`A: ______ do you brush your teeth? B: Twice a day.`,`How long|How many|How often|How much`,"C"],
+[`Our school festival is ______ December 25th.`,`in|at|on|for`,"C"],
+[`Amy is a good student. She is ______ late for school.`,`usually|often|sometimes|never`,"D"],
+[`A: Can your brother ______ a bike? B: No, he ______.`,`rides; can't|ride; can't|riding; doesn't|ride; isn't`,"B"],
+[`______ talk loudly in the library!`,`Not|No|Don't|Doesn't`,"C"],
+[`How much ______ the pair of shoes?`,`is|are|do|does`,"A"],
+[`Today is Friday, and tomorrow is ______.`,`Thursday|Saturday|Sunday|Wednesday`,"B"],
+[`The movie starts ______ 7:30 p.m.`,`on|in|at|to`,"C"],
+[`Which sentence is CORRECT?`,`Does she has comic books?|How many water do you drink?|They are watching TV now.|He usually is happy.`,"C"],
+[`A: ______ of the two boys is your cousin? B: The tall one.`,`Who|Which|What|Whose`,"B"],
+[`There is ______ milk in the bottle, so I need to buy some.`,`a few|many|little|any`,"C"],
+[`Peter: I have a bad cold. / Lucy: ______. Get some rest.`,`That's too bad|Good for you|You're welcome|Have a nice day`,"A"],
+[`"Mina goes to the shelter every Sunday. She cleans cages and walks dogs." What does she NOT do?`,`Walk dogs.|Clean cages.|Buy dog food.|Go on Sundays.`,"C"]
+],
+/* 數學原檔只傳到第 8 題，第 9–20 題為補寫的題目 */
+math:[
+[`計算 (−15) + 8 − (−12) =？`,`−19|5|−11|25`,"B"],
+[`下列哪一個數是 2³ × 3² × 5 的因數？`,`16|25|27|45`,"D"],
+[`化簡 3(2x − 1) − 2(x − 4) =？`,`4x + 5|4x − 11|4x + 7|8x + 5`,"A"],
+[`若某數的相反數是 −7，則此數的絕對值為何？`,`−7|7|1/7|0`,"B"],
+[`點 P(−3, 5) 位於坐標平面的第幾象限？`,`第一象限|第二象限|第三象限|第四象限`,"B"],
+[`解方程式 3x − 7 = x + 5，則 x =？`,`1|3|6|−1`,"C"],
+[`a = 2⁴ × 3²，b = 2² × 3³，則最大公因數 (a, b) =？`,`2² × 3²|2⁴ × 3³|2 × 3|2⁶ × 3⁵`,"A"],
+[`成本 1000 元的衣服加兩成定價，再打九折賣出，售價是多少元？`,`1080 元|1100 元|1200 元|900 元`,"A"],
+[`解方程式 2(x + 3) = 14，則 x =？`,`4|5|7|11`,"A"],
+[`計算 |−9| − |4| =？`,`5|13|−5|−13`,"A"],
+[`8 與 12 的最小公倍數為何？`,`4|24|48|96`,"B"],
+[`若 3：5 = x：20，則 x =？`,`8|12|15|25`,"B"],
+[`計算 2⁵ ÷ 2² =？`,`2⁷|4|8|2¹⁰`,"C"],
+[`某數的 3 倍減 4 等於 11，則此數為何？`,`3|5|7|15`,"B"],
+[`小明帶了一些錢，買 3 枝筆每枝 12 元後還剩 14 元，他原有多少元？`,`26|36|50|62`,"C"],
+[`解方程式 (2x − 1) ÷ 3 = x − 1，則 x =？`,`−2|2|4|−4`,"B"],
+[`90 的質因數分解為何？`,`2 × 3 × 15|2 × 3² × 5|3² × 10|2² × 3 × 5`,"B"],
+[`點 (2, −4) 到 x 軸的距離為何？`,`2|−4|4|6`,"C"],
+[`某商品打八折後售價為 320 元，則原價為多少元？`,`256 元|384 元|400 元|440 元`,"C"],
+[`解方程式 5x − 3(x − 2) = 12，則 x =？`,`3|4.5|9|−3`,"A"]
+],
+tech:[
+[`電腦硬體五大單元中，負責執行運算與邏輯判斷的「大腦」是哪一個元件？`,`記憶體（RAM）|中央處理器（CPU）|硬碟（SSD）|顯示卡（GPU）`,"B"],
+[`電腦內部儲存與處理資料的最基本單位（0或1）稱為什麼？`,`位元（Bit）|位元組（Byte）|像素（Pixel）|赫茲（Hz）`,"A"],
+[`設定網路帳號密碼時，下列哪一組密碼的「安全性最高」？`,`12345678|abcd1234|T@iwan#2026!|20130520（生日）`,"C"],
+[`生活科技教室中，用來測量木材長度並畫出精確90度直角的工具是哪一種？`,`角尺|游標卡尺|圓規|量角器`,"A"],
+[`使用熱熔膠槍黏合作品時，下列哪一項操作最安全？`,`用手指直接觸摸剛擠出的膠條測試溫度|使用完畢後將槍口朝下立於支架上並拔除插頭|將熱熔膠槍平躺在紙張上|對著同學揮舞膠槍`,"B"],
+[`運算思維（Computational Thinking）的四個核心步驟包含：拆解問題、找出規律、抽象化，以及下列何者？`,`設計演算法|購買新電腦|背誦程式碼|繪製海報`,"A"],
+[`程式設計中，讓同一段指令「重複執行多次」的結構稱為什麼？`,`循序結構|選擇（條件）結構|重複（迴圈）結構|陣列結構`,"C"],
+[`繪製「流程圖（Flowchart）」時，用來表示「條件判斷（是／否）」的標準圖形為何？`,`橢圓形|長方形|菱形|平行四邊形`,"C"],
+[`在網路上搜尋資料時，若想「精確搜尋」完全符合字詞順序的結果（如 "108課綱"），應加上哪種符號？`,`雙引號 " "|井字號 #|減號 -|星號 *`,"A"],
+[`著作權法中，創作者完成文章或繪畫作品的那一刻，何時開始享有著作權保護？`,`必須花錢向政府註冊登記後|創作完成時即自動享有|公開發表滿一年後|印製成書本出版後`,"B"],
+[`生活科技製作木工時，為了讓粗糙的木材表面變得平滑，應使用哪一種材料進行打磨？`,`砂紙|銼刀|鋼絲絨|美工刀`,"A"],
+[`繪製工程製圖的「三視圖」時，包含前視圖、俯視圖，以及哪一個視圖？`,`後視圖|仰視圖|右側視圖（側視圖）|透視圖`,"C"],
+[`3D列印機（FDM熱熔堆積成型）最常使用的環保無毒塑料線材是哪一種？`,`PLA（聚乳酸）|PVC（聚氯乙烯）|壓克力|玻璃纖維`,"A"],
+[`使用線鋸機或手鋸切割木板時，應將鋸齒朝向哪個方向安裝？`,`鋸齒朝下（指向握把方向）|鋸齒朝上|鋸齒朝左|任意方向皆可`,"A"],
+[`簡報設計的「版面配置」原則中，為了讓觀眾一眼看清重點，每張投影片的文字應該如何處理？`,`把整篇講稿貼滿整頁|精簡為條列式關鍵字並留白|使用十種不同顏色字體|字體越小越好`,"B"],
+[`收到一封電子郵件寫著「您的銀行帳號異常，請立即點擊連結輸入密碼驗證」，這屬於哪一種網路攻擊？`,`勒索軟體|網路釣魚（Phishing）|分散式阻斷服務（DDoS）|電腦蠕蟲`,"B"],
+[`槓桿原理中，「支點在中間，抗力點與施力點在兩側」（如剪刀、翹翹板），屬於第幾類槓桿？`,`第一類槓桿|第二類槓桿|第三類槓桿|非槓桿結構`,"A"],
+[`二進位數字 1010 轉換為十進位數字是多少？`,`8|10|12|14`,"B"],
+[`齒輪傳動機構中，若大齒輪（40齒）帶動小齒輪（10齒）旋轉，當大齒輪轉1圈時，小齒輪會轉幾圈？`,`0.25圈|1圈|4圈|40圈`,"C"],
+[`創用CC（Creative Commons）授權標示中，看到「NC（Non-Commercial）」圖示代表使用該作品時必須遵守什麼規定？`,`必須標示原作者姓名|不得用於商業用途|禁止改作|必須以相同方式分享`,"B"]
+],
+bio:[
+[`植物細胞有，但動物細胞沒有的構造是哪一個？`,`細胞核|細胞質|細胞壁|細胞膜`,"C"],
+[`細胞內負責行光合作用、製造養分的構造為何？`,`粒線體|葉綠體|液胞|細胞核`,"B"],
+[`使用複式顯微鏡觀察「p」字玻片時，視野中看到的影像為何？`,`p|q|b|d`,"D"],
+[`下列哪一種食物主要能提供人體活動所需的「能量」，且是米飯的主要成分？`,`醣類|脂質|蛋白質|維生素`,"A"],
+[`人體消化系統中，主要負責「吸收水分」並形成糞便的器官是哪一個？`,`胃|小腸|大腸|食道`,"C"],
+[`植物體內負責將根部吸收的水分「由下往上」運輸的構造為何？`,`韌皮部|木質部|形成層|表皮細胞`,"B"],
+[`人體心臟的哪一個腔室壁最厚，負責將充氧血壓送至全身？`,`左心房|右心房|左心室|右心室`,"C"],
+[`血液中負責攜帶氧氣的血球是哪一種？`,`紅血球|白血球|血小板|淋巴球`,"A"],
+[`看到美味食物時流口水，此反射動作的控制中樞位於何處？`,`大腦|小腦|腦幹|脊髓`,"A"],
+[`血糖濃度過高時，人體會分泌哪一種激素來降低血糖？`,`升糖素|胰島素|腎上腺素|甲狀腺素`,"B"],
+[`植物莖會向著陽光生長的「向光性」，主要與哪一種植物激素分布不均有關？`,`生長素|乙烯|吉貝素|離層素`,"A"],
+[`下列哪一種生殖方式屬於「無性生殖」，子代性狀與親代完全相同？`,`種子繁殖|落地生根的葉片繁殖|體外受精|胎生繁殖`,"B"],
+[`人類女性的正常卵細胞中，染色體數目與性染色體組合為何？`,`23條，X|23條，Y|46條，XX|46條，XY`,"A"],
+[`在生物分類階層中，下列哪一個階層包含的生物種類最多、親緣關係最遠？`,`界|門|科|種`,"A"],
+[`下列哪一種生物的細胞沒有細胞核，屬於原核生物界？`,`酵母菌|藍綠菌|草履蟲|矽藻`,"B"],
+[`植物進行「呼吸作用」的時間為何？`,`僅在白天有光時|僅在夜晚無光時|白天與夜晚24小時都在進行|只有開花時才進行`,"C"],
+[`動脈與靜脈的主要區分依據為何？`,`血液中含氧量的高低|血液顏色的深淺|血液流向（離心或向心）|血管所在的位置深淺`,"C"],
+[`已知人類捲舌（R）對不捲舌（r）為顯性，一對皆為捲舌的父母生下不捲舌的小孩，則這對父母的基因型組合為何？`,`RR × RR|RR × Rr|Rr × Rr|Rr × rr`,"C"],
+[`在生態系中，負責將動植物遺體分解為無機物回歸環境的角色是誰？`,`生產者|初級消費者|高級消費者|分解者`,"D"],
+[`台灣珍貴的保育類動物「台灣黑熊」與「櫻花鉤吻鮭」，分別屬於哪兩類脊椎動物？`,`哺乳類、魚類|哺乳類、兩生類|爬蟲類、魚類|鳥類、兩生類`,"A"]
+],
+his:[
+[`台灣史前時代中，已經知道「煉鐵」並製作鐵器的文化是哪一個？`,`長濱文化|大坌坑文化|卑南文化|十三行文化`,"D"],
+[`17世紀時，荷蘭聯合東印度公司以台灣何處作為統治與貿易中心（建熱蘭遮城）？`,`基隆|淡水|台南安平|高雄旗津`,"C"],
+[`同時期統治台灣北部（基隆、淡水）的歐洲國家是哪一國？`,`葡萄牙|西班牙|英國|法國`,"B"],
+[`1662年，率軍擊敗荷蘭人、開啟台灣漢人政權時期的歷史人物是誰？`,`鄭成功|鄭經|施琅|劉銘傳`,"A"],
+[`鄭氏時期在台灣設立的第一座孔廟，位於現今哪一個縣市？`,`台北市|彰化縣|台南市|嘉義市`,"C"],
+[`1683年，清朝派哪一位將領攻下台灣，使台灣正式納入清帝國版圖？`,`沈葆楨|施琅|丁日昌|劉銘傳`,"B"],
+[`清領前期，清廷為防止台灣成為反清基地，曾頒布哪一項限制漢人來台的政策？`,`開山撫番|渡台禁令|皇民化運動|三七五減租`,"B"],
+[`清領時期台灣中部最重要的水利工程「八堡圳」，位於現今哪一縣市？`,`苗栗縣|彰化縣|雲林縣|屏東縣`,"B"],
+[`1860年《北京條約》簽訂後，台灣開港通商，當時出口的大宗商品「不包括」哪一項？`,`茶葉|蔗糖|樟腦|稻米`,"D"],
+[`1874年發生哪一事件後，清廷派沈葆楨來台加強海防並開山撫番？`,`牡丹社事件|霧社事件|噍吧哖事件|二二八事件`,"A"],
+[`台灣首任巡撫劉銘傳在台推行多項現代化建設，下列何者為其政績？`,`興建基隆至新竹鐵路|興建嘉南大圳|創立台北帝國大學|實施土地改革`,"A"],
+[`1895年清朝因哪一場戰爭戰敗，簽訂《馬關條約》將台灣割讓給日本？`,`鴉片戰爭|英法聯軍|中法戰爭|甲午戰爭`,"D"],
+[`日本統治台灣初期，最高統治機構為何？`,`台灣省政府|台灣總督府|承天府|東寧王國`,"B"],
+[`日治時期，日本為有效控制台灣基層社會，利用清代舊慣推行的制度為何？`,`郊商制度|保甲制度|屯田制度|科舉制度`,"B"],
+[`日治時期在嘉南平原興建「嘉南大圳」，大幅提升稻米與甘蔗產量的工程師是誰？`,`後藤新平|八田與一|樺山資紀|兒玉源太郎`,"B"],
+[`1920年代，林獻堂、蔣渭水等人成立哪一個組織，透過演講與發行報紙啟迪民智？`,`台灣民主國|台灣文化協會|台灣民眾黨|台灣地方自治聯盟`,"B"],
+[`1930年爆發原住民強烈反抗日本高壓統治的「霧社事件」，其領導人是誰？`,`莫那．魯道|余清芳|羅福星|林爽文`,"A"],
+[`二戰期間，日本在台推行「皇民化運動」的主要目的為何？`,`推廣台灣本土文化|使台灣人效忠天皇並投入戰爭|實施台灣地方自治|發展台灣重工業`,"B"],
+[`1945年二次大戰結束後，國民政府派誰來台擔任台灣省行政長官？`,`陳儀|陳誠|蔣經國|孫立人`,"A"],
+[`1987年台灣宣布解除實施長達38年的哪一項法令，象徵政治邁向民主化？`,`動員戡亂時期臨時條款|戒嚴令|耕者有其田條例|渡台禁令`,"B"]
+],
+civ:[
+[`根據心理學家馬斯洛的需求層次理論，人類最基本、最優先需要滿足的是哪一項需求？`,`自我實現需求|尊重需求|生理需求|愛與歸屬需求`,"C"],
+[`由「父母與未婚子女」所組成的家庭，稱為哪一種家庭型態？`,`折衷家庭|核心家庭（小家庭）|大家庭|頂客家庭`,"B"],
+[`我國《民法》規定，男女結婚的法定最低年齡皆為幾歲？`,`16歲|18歲|20歲|22歲`,"B"],
+[`生理上天生的男女差異稱為「生理性別」，而後天社會文化賦予男女的角色期待稱為？`,`性別氣質|社會性別|性別認同|性傾向`,"B"],
+[`為了落實校園性別平等，我國制定了哪一部重要法律來防治校園性騷擾與性霸凌？`,`《家庭暴力防治法》|《性別平等教育法》|《勞動基準法》|《兒童及少年福利與權益保障法》`,"B"],
+[`學生在學校透過班會討論班級事務、投票表決，這是培養哪一種公民素養？`,`民主法治與自治精神|商業競爭能力|宗教信仰自由|家族倫理觀念`,"A"],
+[`下列哪一種社會規範具有「國家強制力」，違反時會受到公權力處罰？`,`風俗習慣|倫理道德|宗教信仰|法律`,"D"],
+[`社區居民自發性組織巡守隊、舉辦淨灘活動，這展現了哪一種精神？`,`社區意識|地方派系|部落主義|個人主義`,"A"],
+[`面對不同族群的飲食與宗教禁忌（如穆斯林不吃豬肉），我們應抱持何種態度？`,`強迫對方配合多數人|尊重與包容多元文化|批評對方落後迷信|刻意孤立不與往來`,"B"],
+[`「我族中心主義」指的是下列哪一種心態？`,`認為所有文化一律平等|以自身文化為標準去評斷甚至貶低其他文化|積極學習外國語言與文化|放棄本土文化全盤西化`,"B"],
+[`我國最高行政機關（行政院）與最高立法機關（立法院）之間的關係，體現了憲法的哪一項原則？`,`權力分立與制衡|中央集權|君主立憲|地方自治`,"A"],
+[`公民透過「投票」選出民意代表替自己發聲，這種民主形式稱為？`,`直接民主|間接民主（代議民主）|精英政治|寡頭政治`,"B"],
+[`下列哪一項權利屬於憲法保障的「受益權」，人民可請求國家提供教育或救濟？`,`選舉權|受國民教育權|言論自由|集會結社自由`,"B"],
+[`在網路上隨意轉傳未經查證的假消息，甚至辱罵他人，可能侵害對方的哪項權利？`,`財產權|名譽權|參政權|隱私權`,"B"],
+[`志願結社（如環保團體、慈善基金會）在民主社會中扮演的重要角色為何？`,`取代政府行使警察權|凝聚民間力量、監督政府並促進公益|專為企業賺取商業利潤|強制人民繳納會費`,"B"],
+[`「法律之前，人人平等」這句話主要體現了憲法中的哪一項基本權利？`,`平等權|自由權|受益權|參政權`,"A"],
+[`父母在管教子女時若發生嚴重肢體暴力，法院可依法核發哪一種命令來保護受暴者？`,`搜索票|保護令|拘票|支付命令`,"B"],
+[`媒體在民主社會中被稱為「第四權」，其最核心的功能為何？`,`替政府宣傳政績|監督政府施政並提供公共資訊|決定法律是否違憲|審判重大刑事案件`,"B"],
+[`某社區住戶共同約定「晚上10點後不彈奏樂器」，這項約定主要屬於哪種規範？`,`憲法|刑法|社區規約（生活公約）|行政命令`,"C"],
+[`政府規定汽機車駕駛人必須戴安全帽，此限制人民自由的目的符合《憲法》第23條的哪一項理由？`,`防止妨礙他人自由|避免緊急危難|維持社會秩序|增進公共利益`,"D"]
+],
+geo:[
+[`在沒有方向標的地圖上，通常以哪個方位作為地圖的上方？`,`東方|西方|南方|北方`,"D"],
+[`地球上劃分東半球與西半球的基準線是哪一條？`,`赤道|本初經線（0度經線）|北回歸線|國際換日線`,"B"],
+[`下列哪一條重要緯線通過台灣的嘉義與花蓮？`,`赤道|北回歸線|南回歸線|北極圈`,"B"],
+[`台灣本島四面環海，其東側瀕臨哪一個大洋？`,`印度洋|大西洋|太平洋|北極海`,"C"],
+[`台灣本島與中國大陸之間隔著哪一個海峽？`,`巴士海峽|台灣海峽|麻六甲海峽|白令海峽`,"B"],
+[`台灣本島的主體地形以哪一種地形所占面積比例最高？`,`平原|盆地|台地|山地`,"D"],
+[`台灣本島五大山脈中，位置最靠東側、緊鄰太平洋的是哪一座山脈？`,`海岸山脈|中央山脈|雪山山脈|阿里山山脈`,"A"],
+[`台灣東部海岸（如清水斷崖）主要屬於哪一種海岸地形？`,`沙岸|斷層海岸|珊瑚礁海岸|岬灣海岸`,"B"],
+[`台灣冬季盛行「東北季風」，此時哪一個地區最容易出現陰雨綿綿的天氣？`,`基隆、宜蘭|台南、高雄|台中、彰化|澎湖、金門`,"A"],
+[`夏季常侵襲台灣、帶來豐沛雨量但易造成災害的天氣系統為何？`,`寒流|梅雨|颱風|東北季風`,"C"],
+[`台灣河川普遍具有「坡陡流急、含沙量大」的特徵，主要影響因素為何？`,`緯度太低|山高水短、雨量集中|人口密度過高|寒流經過`,"B"],
+[`台灣最長的河川是哪一條？`,`淡水河|濁水溪|高屏溪|曾文溪`,"B"],
+[`台灣目前人口分布最集中的區域是哪一個？`,`北部區域|中部區域|南部區域|東部區域`,"A"],
+[`近年來台灣人口結構面臨的最嚴重問題為何？`,`人口爆炸性成長|少子化與高齡化|幼年人口比例過高|男女比例嚴重失衡（女遠多於男）`,"B"],
+[`「扶養比」的計算公式中，分子（被扶養人口）是指哪兩個年齡層？`,`0–14歲 與 65歲以上|15–64歲 與 65歲以上|0–14歲 與 15–64歲|僅限 65歲以上`,"A"],
+[`台灣的離島中，主要由「玄武岩」構成、擁有柱狀玄武岩景觀的是哪裡？`,`澎湖群島|金門列島|馬祖列島|琉球嶼（小琉球）`,"A"],
+[`下列哪一個離島屬於「珊瑚礁島」，以浮潛與綠蠵龜聞名？`,`蘭嶼|綠島|小琉球|龜山島`,"C"],
+[`當北半球處於「夏至」（約6月22日）時，太陽直射哪一條緯線，使台灣白晝最長？`,`赤道|北回歸線|南回歸線|北極圈`,"B"],
+[`在等高線地形圖上，等高線越「密集」，代表該處的坡度如何？`,`越平緩|越陡峭|高度越低|為盆地地形`,"B"],
+[`台灣許多地名帶有「埤」、「圳」、「潭」（如大埤、瑠公圳），這反映早期漢人開發時特別重視哪項資源？`,`礦產資源|水利灌溉設施|森林木材|漁業港口`,"B"]
+]};
+const ALL=[];
+SUBJ.forEach(s=>DATA[s.k].forEach((r,i)=>ALL.push({id:ALL.length,s:s.k,d:i<5?0:(i<15?1:2),q:r[0],o:r[1].split("|"),a:"ABCD".indexOf(r[2])})));
+const SNAME=Object.fromEntries(SUBJ.map(s=>[s.k,s.n]));
+const DNAME=["簡單","中等","困難"];
+
+/* ============ 常數與存檔 ============ */
+const N=5, COUNT=3000, PREVIEW=5000, ANSWER=10000, REVEAL=3000, CYCLE=PREVIEW+ANSWER+REVEAL;
+const KEY="knowledge-island-v1";
+const AVATARS=[{e:"🏝️",p:0},{e:"🐢",p:40},{e:"🦜",p:80},{e:"🦀",p:120},{e:"🐙",p:180},{e:"🐬",p:260},{e:"🦈",p:360},{e:"🐳",p:500}];
+const AV_OK=new Set(AVATARS.map(a=>a.e));
+const TITLES=["漂流新手","沙灘拾貝人","椰子樹學徒","小島探險家","叢林嚮導","燈塔守望者","島嶼智者","海洋領航員","知識島主"];
+function defaults(){return {name:"島民"+(100+Math.floor(Math.random()*900)),xp:0,coins:200,owned:["🏝️"],av:"🏝️",games:0,wins:0,bankAt:0,rank:0,rw:0};}
+function load(){try{const r=JSON.parse(localStorage.getItem(KEY)||"null");if(r&&typeof r==="object")return Object.assign(defaults(),r);}catch(e){}return defaults();}
+let SAVE=load();
+let CLOUD=null,cloud={st:"checking",at:0},pushT=null,pushing=false,dirty=false;
+function persist(noCloud){
+  SAVE.ts=Date.now();
+  try{localStorage.setItem(KEY,JSON.stringify(SAVE));}catch(e){}
+  if(!noCloud&&CLOUD){dirty=true;clearTimeout(pushT);pushT=setTimeout(push,1500);}
+}
+/* ---- 雲端存檔：存在每位玩家自己的私人資料夾，換裝置用同一個帳號就會接著玩 ---- */
+function saveText(){
+  if(cloud.st==="checking")return "正在讀取雲端存檔…";
+  if(cloud.st==="saving")return "儲存中…";
+  if(cloud.st==="ok")return "已存到雲端（"+new Date(cloud.at).toLocaleTimeString("zh-TW",{hour:"2-digit",minute:"2-digit",hour12:false})+"）。用同一個帳號打開連結，換裝置也會接著玩。";
+  if(cloud.st==="err")return "雲端存檔暫時失敗，進度還在這台裝置上，會自動再試。";
+  return "目前只存在這台裝置。要有貢獻者以上的權限並登入，才能存到雲端。";
+}
+function paintSave(){
+  const el=document.getElementById("savestat");if(el)el.textContent=saveText();
+  const b=document.getElementById("savebtn");if(b)b.disabled=!(cloud.st==="ok"||cloud.st==="err");
+}
+async function push(){
+  if(!CLOUD||pushing||!dirty)return;
+  pushing=true;dirty=false;cloud.st="saving";paintSave();
+  try{
+    const snap=JSON.parse(JSON.stringify(SAVE));
+    await CLOUD.set({save:snap,ts:snap.ts});
+    cloud.st="ok";cloud.at=Date.now();
+  }catch(e){
+    const c=e&&e.code;
+    if(c==="invalid_argument"||c==="revoked"||c==="not_granted"||c==="capability_disabled"||c==="capability_removed"){cloud.st="off";CLOUD=null;}
+    else{cloud.st="err";dirty=true;clearTimeout(pushT);pushT=setTimeout(push,15000);}
+  }
+  pushing=false;paintSave();
+  if(dirty&&cloud.st==="ok"){clearTimeout(pushT);pushT=setTimeout(push,500);}
+}
+function sanitize(c){
+  const d=defaults(),n=(v,def,lo,hi)=>Number.isFinite(Number(v))?Math.max(lo,Math.min(hi,Number(v))):def;
+  const owned=Array.isArray(c.owned)?c.owned.filter(e=>AV_OK.has(e)):[];
+  if(!owned.includes("🏝️"))owned.unshift("🏝️");
+  return {name:typeof c.name==="string"&&c.name?c.name.slice(0,8):d.name,xp:n(c.xp,0,0,1e9),coins:n(c.coins,0,0,1e9),owned,av:owned.includes(c.av)?c.av:"🏝️",
+    games:n(c.games,0,0,1e9),wins:n(c.wins,0,0,1e9),bankAt:n(c.bankAt,0,0,4e12),rank:Math.floor(n(c.rank,0,0,RANKS.length-1)),rw:Math.floor(n(c.rw,0,0,1e6)),ts:n(c.ts,0,0,4e12)};
+}
+async function initCloud(){
+  try{
+    const cl=window.claude&&window.claude.use?window.claude:null;
+    const db=cl?await cl.use("db"):null,user=cl?await cl.use("user"):null;
+    const uid=user?await user.id():null;
+    if(!db||!uid){cloud.st="off";return paintSave();}
+    const ref=db.doc("data/users/"+uid+"/save");
+    const snap=await ref.get();
+    const cs=snap.exists&&snap.data()?snap.data().save:null;
+    CLOUD=ref;
+    if(cs&&typeof cs==="object"&&(Number(cs.ts)||0)>(Number(SAVE.ts)||0)){
+      while(match)await new Promise(r=>setTimeout(r,1000));
+      SAVE=sanitize(cs);persist(true);
+      cloud.st="ok";cloud.at=Date.now();
+      render();
+    }else if(cs&&(Number(cs.ts)||0)===(Number(SAVE.ts)||0)){
+      cloud.st="ok";cloud.at=Date.now();
+    }else{
+      dirty=true;await push();
+    }
+  }catch(e){cloud.st="off";CLOUD=null;}
+  paintSave();
+}
+function flushNow(){if(CLOUD&&dirty){clearTimeout(pushT);push();}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")flushNow();});
+window.addEventListener("pagehide",flushNow);
+function levelOf(xp){let lvl=1,need=100,left=xp;while(left>=need){left-=need;lvl++;need+=50;}return {lvl,cur:left,need};}
+function titleOf(lvl){return TITLES[Math.min(TITLES.length-1,Math.floor((lvl-1)/3))];}
+const scoreFor=ms=>100+Math.round(900*Math.max(0,ANSWER-ms)/ANSWER);
+/* 段位：升到下一段需要的排位勝場 = 5 × (目前段位序號 + 1)，也就是 5、10、15… */
+const RANKS=["地球","月球","火星","土星","金星","木星","海王星","冥王星","太陽","銀河系","黑洞"];
+const WAGERS=[25,50,100,150];
+const BANK_MS=30*60*1000, BANK_AMT=50;
+const needWins=r=>5*(r+1);
+let ICN=0;
+function rankIcon(i,s){
+  const id="g"+(++ICN);
+  const P=[
+   `<circle cx="20" cy="20" r="16" fill="#2F80ED"/><path d="M13 12c4-3 9-1 8 4s-6 3-7 8-5 0-5-5 1-5 4-7z" fill="#3FAE6A"/><path d="M26 21c3-1 6 2 4 6s-6 3-7 0 0-5 3-6z" fill="#3FAE6A"/>`,
+   `<circle cx="20" cy="20" r="16" fill="#C9CDD2"/><circle cx="14" cy="15" r="3.5" fill="#A4A9B0"/><circle cx="25" cy="24" r="4.5" fill="#A4A9B0"/><circle cx="15" cy="27" r="2" fill="#A4A9B0"/>`,
+   `<circle cx="20" cy="20" r="16" fill="#D2582E"/><path d="M8 18c5-3 8 1 12-1s8 2 12 0" stroke="#A8401F" stroke-width="3" fill="none"/><circle cx="26" cy="27" r="3" fill="#A8401F"/>`,
+   `<ellipse cx="20" cy="20" rx="19" ry="5.5" transform="rotate(-20 20 20)" fill="none" stroke="#B98C3A" stroke-width="2.5"/><circle cx="20" cy="20" r="11" fill="#E0B866"/>`,
+   `<circle cx="20" cy="20" r="16" fill="#EBC15A"/><path d="M6 17c6-4 10 3 16-1s9 1 12 0M7 25c6-3 9 3 15 0s8 1 11-1" stroke="#D19B3A" stroke-width="2.5" fill="none"/>`,
+   `<clipPath id="${id}"><circle cx="20" cy="20" r="16"/></clipPath><circle cx="20" cy="20" r="16" fill="#D9A878"/><g clip-path="url(#${id})"><rect x="0" y="12" width="40" height="4" fill="#B5774A"/><rect x="0" y="21" width="40" height="5" fill="#B5774A"/><rect x="0" y="29" width="40" height="3" fill="#C98F62"/></g><ellipse cx="27" cy="23" rx="3.5" ry="2" fill="#A24D2B"/>`,
+   `<circle cx="20" cy="20" r="16" fill="#3B5BDB"/><path d="M6 16c8-3 14 3 28-1" stroke="#7C97FF" stroke-width="2.5" fill="none"/><ellipse cx="25" cy="25" rx="4" ry="2.4" fill="#2441A8"/>`,
+   `<circle cx="20" cy="20" r="11" fill="#B9A28E"/><path d="M15 20c0-4 5-4 5-1 0-3 5-3 5 1 0 3-5 6-5 7-1-1-5-4-5-7z" fill="#E8DCCB"/>`,
+   `<g stroke="#F6B93B" stroke-width="2.5" stroke-linecap="round"><path d="M20 3v4M20 33v4M3 20h4M33 20h4M8 8l2.8 2.8M32 8l-2.8 2.8M8 32l2.8-2.8M32 32l-2.8-2.8"/></g><circle cx="20" cy="20" r="11" fill="#F6B93B"/><circle cx="20" cy="20" r="7" fill="#FFD76E"/>`,
+   `<circle cx="20" cy="20" r="17" fill="#2B1B4F"/><path d="M20 20c0-4 5-6 8-3s1 9-5 10-12-3-12-10 8-12 15-10" stroke="#C9A6FF" stroke-width="2" fill="none" stroke-linecap="round"/><circle cx="20" cy="20" r="3" fill="#fff"/>`,
+   `<ellipse cx="20" cy="20" rx="18" ry="6" transform="rotate(-18 20 20)" fill="none" stroke="#F6B93B" stroke-width="3"/><circle cx="20" cy="20" r="10" fill="#000" stroke="#8A6BFF" stroke-width="1.5"/>`
+  ];
+  return `<svg width="${s}" height="${s}" viewBox="0 0 40 40" aria-hidden="true" style="flex:none">${P[i]}</svg>`;
+}
+
+/* ============ 工具 ============ */
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function rng(seed){let a=seed>>>0;return function(){a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+function shuffled(arr,seed){const r=rng(seed),a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function pickQs(subj){
+  const picks=[];
+  [0,1,1,2,2].forEach(d=>{
+    const pool=ALL.filter(q=>q.d===d&&(subj==="all"||q.s===subj)&&!picks.includes(q));
+    picks.push(pool[Math.floor(Math.random()*pool.length)]);
+  });
+  return picks;
+}
+const COIN=`<svg class="coin" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="var(--sun)"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="var(--sun-ink)" stroke-opacity=".45" stroke-width="1.5"/><path d="M12 7.5v9M9.5 10h4a1.6 1.6 0 010 3.2h-3a1.6 1.6 0 000 3.2h4.2" fill="none" stroke="var(--sun-ink)" stroke-width="1.4" stroke-linecap="round"/></svg>`;
+const ISLAND=`<svg viewBox="0 0 150 100" aria-hidden="true"><circle cx="112" cy="26" r="15" class="f-sun"/><path d="M8 78c12-22 34-30 52-30s40 8 62 30z" class="f-sand"/><path d="M66 50c-2-14-1-26 4-36" class="s-trunk" stroke-width="4" stroke-linecap="round"/><path d="M70 14c-10-8-22-6-30 2 10-3 20-2 30-2zM70 14c8-10 22-10 32-2-10-1-22-1-32 2zM70 14c-6-2-16 6-18 16 8-8 14-12 18-16zM70 14c6-2 16 4 20 14-8-6-14-10-20-14z" class="f-palm"/><path d="M0 84c12 0 12-6 25-6s13 6 25 6 12-6 25-6 13 6 25 6 12-6 25-6v22H0z" class="f-sea"/></svg>`;
+
+/* ============ 狀態 ============ */
+const $app=document.getElementById("app");
+let ui={screen:"home",subj:"all",mode:"solo",err:"",busy:false,code:"",wager:25};
+let seenMid="";
+let ROOM=undefined;      // 大廳 room 命名空間；undefined=檢查中，null=無法連線
+let NR=null, offs=[];    // 目前加入的對戰房間
+let match=null, timerId=null, myPeer=null;
+
+(async()=>{
+  try{ROOM=await (window.claude&&window.claude.use?window.claude.use("room"):null);}catch(e){ROOM=null;}
+  if(ROOM===undefined)ROOM=null;
+  if(ui.screen==="home")render();
+})();
+
+/* ============ 畫面 ============ */
+function render(){
+  if(ui.screen==="home")return renderHome();
+  if(ui.screen==="shop")return renderShop();
+  if(ui.screen==="lobby")return renderLobby();
+  if(ui.screen==="battle")return renderBattle();
+  if(ui.screen==="result")return renderResult();
+}
+function topBar(){
+  const L=levelOf(SAVE.xp);
+  return `<div class="bar-top">
+    <div class="avatar" aria-hidden="true">${SAVE.av}</div>
+    <div class="who"><label class="label" for="nm">島民名字</label>
+      <input id="nm" maxlength="8" value="${esc(SAVE.name)}" autocomplete="off">
+      <div class="lv"><span>Lv.${L.lvl} ${titleOf(L.lvl)}</span><span class="xp" title="${L.cur} / ${L.need} 經驗"><i style="width:${Math.round(L.cur/L.need*100)}%"></i></span></div></div>
+    <div class="coins" aria-label="金幣">${COIN}<span>$${SAVE.coins}</span></div></div>`;
+}
+function fixWager(){const ok=WAGERS.filter(w=>w<=SAVE.coins);if(ok.length&&ui.wager>SAVE.coins)ui.wager=ok[ok.length-1];}
+function wagerChips(){return WAGERS.map(w=>`<button class="chip" data-act="wager" data-w="${w}" aria-pressed="${ui.wager===w}" ${SAVE.coins<w?"disabled":""}>$${w}</button>`).join("");}
+function bankLeft(){const now=Date.now();if(SAVE.bankAt>now){SAVE.bankAt=now;persist();}if(!SAVE.bankAt)return 0;return Math.max(0,SAVE.bankAt+BANK_MS-now);}
+function fmtLeft(ms){const s=Math.ceil(ms/1000),m=Math.floor(s/60);return m+":"+String(s%60).padStart(2,"0");}
+function bankCard(){
+  const left=bankLeft(),ready=left===0;
+  return `<div class="card bank"><div><div class="label">銀行</div><p class="muted">每 30 分鐘可以領 $${BANK_AMT}。不會累積，領了才重新開始計時。</p></div><button class="btn" id="bankbtn" data-act="bank" data-ready="${ready?1:0}" ${ready?"":"disabled"}>${ready?"領取 $"+BANK_AMT:"還要 "+fmtLeft(left)}</button></div>`;
+}
+function rankCard(){
+  const r=SAVE.rank,max=r>=RANKS.length-1,need=needWins(r);
+  const ladder=RANKS.map((n,i)=>`<span class="${i<=r?"on":""} ${i===r?"cur":""}" title="${n}">${rankIcon(i,26)}</span>`).join("");
+  return `<div class="card rankcard"><div>${rankIcon(r,64)}</div><div class="rk-body"><div class="label">排位段位</div><div class="rk-name">${RANKS[r]}</div>
+    ${max?`<p class="muted">已經是最高段位，你就是知識島的黑洞。</p>`:`<div class="xp" style="max-width:none"><i style="width:${Math.round(SAVE.rw/need*100)}%"></i></div><p class="muted">排位賽贏 ${SAVE.rw} / ${need} 場，升到 ${RANKS[r+1]}</p>`}</div>
+    <div class="ladder">${ladder}</div>
+    <p class="muted" style="width:100%">升第一段要贏 5 場，之後每段多 5 場（10、15、20…）。只有排位賽的第一名算勝場，輸了不會掉段。</p></div>`;
+}
+function saveCard(){
+  return `<div class="card bank"><div><div class="label">存檔</div><p class="muted" id="savestat">${saveText()}</p></div><button class="btn ghost" id="savebtn" data-act="savenow" ${cloud.st==="ok"||cloud.st==="err"?"":"disabled"}>立即存檔</button></div>`;
+}
+function renderHome(){
+  fixWager();
+  const multi=ui.mode==="multi",ranked=ui.mode==="ranked";
+  const chips=[{k:"all",n:"全部科目"}].concat(SUBJ).map(s=>`<button class="chip" data-act="subj" data-k="${s.k}" aria-pressed="${ui.subj===s.k}">${s.n}</button>`).join("");
+  const broke=SAVE.coins<WAGERS[0];
+  let play;
+  if(!multi){
+    play=`<div class="label">賭注（第一名拿走全部賭金）</div><div class="chips">${wagerChips()}</div>
+      <p class="muted">三人對戰，獎池 $${ui.wager*3}。${ranked?"電腦對手會隨段位變強。":"練習賽不計段位。"}</p>
+      <button class="btn go" data-act="${ranked?"ranked":"solo"}" ${broke?"disabled":""}>${ranked?"開始排位賽":"開始對戰"}</button>
+      ${broke?`<p class="err">金幣不足 $25，先到下面的銀行領錢。</p>`:""}`;
+  }else if(ROOM===undefined){
+    play=`<p class="note">正在檢查連線…</p>`;
+  }else if(ROOM===null){
+    play=`<p class="note">這個頁面目前無法連線。多人對戰需要用有編輯或貢獻權限的帳號，打開分享給你的連結。</p>`;
+  }else{
+    play=`<div class="row-btns"><button class="btn go" data-act="create" ${ui.busy?"disabled":""}>建立房間</button></div>
+      <div class="field"><input id="code" maxlength="6" placeholder="房間代碼" aria-label="房間代碼" value="${esc(ui.code)}" autocomplete="off"><button class="btn" data-act="join" ${ui.busy?"disabled":""}>加入房間</button></div>
+      <p class="muted">把房間代碼告訴朋友，大家輸入同一組代碼就會進到同一間。賭注由房主在房間裡選。</p>`;
+  }
+  $app.innerHTML=`${topBar()}
+  <div class="hero"><div><h1>知識島</h1><p>八大科目搶答，答得越快分數越高。</p></div>${ISLAND}</div>
+  <div class="card" style="display:flex;flex-direction:column;gap:14px">
+    <div class="label">選擇科目</div><div class="chips">${chips}</div>
+    <div class="seg" role="group" aria-label="對戰模式"><button data-act="mode" data-m="solo" aria-pressed="${ui.mode==="solo"}">單人</button><button data-act="mode" data-m="ranked" aria-pressed="${ranked}">排位賽</button><button data-act="mode" data-m="multi" aria-pressed="${multi}">多人連線</button></div>
+    ${play}${ui.err?`<p class="err">${esc(ui.err)}</p>`:""}
+  </div>
+  ${rankCard()}
+  ${bankCard()}
+  ${saveCard()}
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="rules"><div><b>5</b><span>題一局</span></div><div><b>5 秒</b><span>看題</span></div><div><b>10 秒</b><span>搶答</span></div></div>
+    <p class="muted">答對才有分，越早按下答案越高，每題 100 到 1000 分。答錯或沒答得 0 分。</p>
+    <p class="muted">每局開打先付賭注，總分第一名拿走所有人的賭金，其他人的賭注就沒了。</p>
+    <div class="stats"><span>對戰 <b>${SAVE.games}</b> 場</span><span>第一名 <b>${SAVE.wins}</b> 次</span></div>
+    <button class="btn ghost" data-act="shop">裝備店：用金幣換新造型</button>
+  </div>`;
+}
+function renderShop(){
+  const items=AVATARS.map(a=>{
+    const own=SAVE.owned.includes(a.e),on=SAVE.av===a.e;
+    const btn=on?`<button class="btn ghost" disabled>使用中</button>`:own?`<button class="btn" data-act="equip" data-e="${a.e}">使用</button>`:`<button class="btn" data-act="buy" data-e="${a.e}" ${SAVE.coins<a.p?"disabled":""}>${a.p} 金幣</button>`;
+    return `<div class="item ${on?"on":""}"><div class="big">${a.e}</div>${btn}</div>`;
+  }).join("");
+  $app.innerHTML=`${topBar()}<h2>裝備店</h2><p class="muted">對戰贏得的金幣可以換島民造型。</p><div class="shop">${items}</div>${ui.err?`<p class="err">${esc(ui.err)}</p>`:""}<button class="btn ghost" data-act="home">回到島上</button>`;
+}
+
+/* ---- 大廳（多人） ---- */
+function viewers(){return NR?NR.peers().filter(p=>p.kind==="viewer"&&p.presence&&p.presence.n!==undefined).sort((a,b)=>a.peer<b.peer?-1:1):[];}
+function cleanName(v){return String(v||"玩家").replace(/[\u0000-\u001f]/g,"").slice(0,10)||"玩家";}
+function cleanAv(v){return AV_OK.has(v)?v:"🏝️";}
+function renderLobby(){
+  fixWager();
+  const ps=viewers();
+  const me=ps.find(p=>p.sameTab);
+  if(me)myPeer=me.peer;
+  const host=ps[0],isHost=!!(host&&host.sameTab);
+  const hw=host&&WAGERS.includes(Number(host.presence.w))?Number(host.presence.w):25;
+  const w=isHost?ui.wager:hw;
+  const elig=ps.filter(p=>Number(p.presence.c)>=w);
+  const hostOk=!!(host&&elig.includes(host));
+  const list=ps.map((p,i)=>{const c=Number(p.presence.c)||0;return `<li><span class="avatar" aria-hidden="true">${cleanAv(p.presence.av)}</span><span><b>${esc(cleanName(p.presence.n))}</b>${i===0?'<span class="tag">房主</span>':""}${p.sameTab?'<span class="tag" style="background:var(--sea);color:var(--sea-ink)">你</span>':""}<br><span class="muted">Lv.${Number(p.presence.lv)||1} · $${c}${c>=w?"":" · 金幣不足"}</span></span></li>`;}).join("");
+  const chips=[{k:"all",n:"全部科目"}].concat(SUBJ).map(s=>`<button class="chip" data-act="subj" data-k="${s.k}" aria-pressed="${ui.subj===s.k}" ${isHost?"":"disabled"}>${s.n}</button>`).join("");
+  const canStart=elig.length>=2&&hostOk;
+  $app.innerHTML=`${topBar()}
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="label">房間代碼</div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><span class="code">${esc(ui.code.toUpperCase())}</span><button class="btn ghost" data-act="copy">複製代碼</button></div>
+    <p class="muted">${ps.length} 位玩家在房間裡</p>
+    <ul class="plist">${list||'<li><span class="muted">連線中…</span></li>'}</ul>
+  </div>
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div class="label">科目（房主決定）</div><div class="chips">${chips}</div>
+    <div class="label">賭注（房主決定）</div>
+    ${isHost?`<div class="chips">${wagerChips()}</div>`:`<p><b>$${w}</b></p>`}
+    <p class="muted">這局有 ${elig.length} 位玩家出得起賭注，獎池 $${w*elig.length}，第一名全拿。</p>
+    ${isHost?`<button class="btn go" data-act="startmulti" ${canStart?"":"disabled"}>開始對戰</button>${canStart?"":'<p class="muted">至少要 2 位金幣足夠的玩家才能開始。</p>'}`:`<p class="note">${SAVE.coins<w?"你的金幣不足 $"+w+"，這局無法參加。回到首頁的銀行領錢後再來。":"等待房主開始對戰…"}</p>`}
+    ${ui.err?`<p class="err">${esc(ui.err)}</p>`:""}
+  </div>
+  <button class="btn ghost" data-act="leave">離開房間</button>`;
+}
+function setPresence(st){if(!NR)return;NR.presence({n:SAVE.name,av:SAVE.av,lv:levelOf(SAVE.xp).lvl,c:SAVE.coins,w:ui.wager,st:st||"lobby"}).catch(()=>{});}
+async function joinRoom(code){
+  ui.err="";
+  if(!ROOM){ui.err="目前無法連線。";return render();}
+  ui.busy=true;render();
+  try{NR=await ROOM.join("island-"+code.toLowerCase());}
+  catch(e){ui.busy=false;ui.err="進不去房間（"+((e&&e.code)||"錯誤")+"），請稍後再試。";return render();}
+  ui.busy=false;ui.code=code;
+  offs.push(NR.on("start",onStart),NR.on("score",onScore),NR.onPeers(()=>{if(ui.screen==="lobby")renderLobby();if(match&&match.mode==="multi")refreshStand();}));
+  setPresence("lobby");
+  ui.screen="lobby";render();
+}
+function leaveRoom(){
+  offs.forEach(f=>{try{f();}catch(e){}});offs=[];
+  if(NR){NR.leave().catch(()=>{});NR=null;}
+  stopTicker();match=null;myPeer=null;ui.screen="home";ui.err="";render();
+}
+function genCode(){const c="abcdefghjkmnpqrstuvwxyz23456789";let s="";for(let i=0;i<4;i++)s+=c[Math.floor(Math.random()*c.length)];return s;}
+function hostStart(){
+  ui.err="";
+  const w=ui.wager;
+  const elig=viewers().filter(p=>Number(p.presence.c)>=w);
+  if(elig.length<2||SAVE.coins<w)return;
+  const qs=pickQs(ui.subj);
+  const d={mid:Math.random().toString(36).slice(2,10),qs:qs.map(q=>q.id),seed:Math.floor(Math.random()*1e9),w,pl:elig.map(p=>p.peer)};
+  const send=()=>NR&&NR.emit("start",d).catch(e=>{if(e&&e.code==="not_permitted"){ui.err="這個帳號沒有開局權限，需要有貢獻者以上的權限。";render();}});
+  send();setTimeout(send,400);setTimeout(send,1200);
+}
+function onStart(msg){
+  const d=msg.data;
+  if(!d||typeof d.mid!=="string"||!Array.isArray(d.qs)||d.qs.length!==N||!Array.isArray(d.pl))return;
+  if(match||d.mid===seenMid)return;
+  const w=Number(d.w);
+  if(!WAGERS.includes(w)||d.pl.length<2||d.pl.length>16||d.pl.some(x=>typeof x!=="string"))return;
+  if(d.qs.some(i=>!Number.isInteger(i)||!ALL[i]))return;
+  const qs=d.qs.map(i=>ALL[i]);
+  const cur=NR?NR.peers():[];
+  const meP=cur.find(p=>p.sameTab);
+  const meKey=meP?meP.peer:myPeer;
+  seenMid=d.mid;
+  if(!meKey||!d.pl.includes(meKey)){ui.err="這局你金幣不足，沒有參加。";if(ui.screen==="lobby")render();return;}
+  if(SAVE.coins<w){ui.err="金幣不足 $"+w+"，這局沒有參加。";if(ui.screen==="lobby")render();return;}
+  const players={};
+  d.pl.forEach(k=>{const p=cur.find(x=>x.peer===k);players[k]={name:p&&p.presence?cleanName(p.presence.n):"玩家",av:p&&p.presence?cleanAv(p.presence.av):"🏝️",pts:[],ms:[],pick:[]};});
+  beginMatch({mode:"multi",mid:d.mid,qs,seed:Number(d.seed)||1,players,meKey,wager:w,pot:w*d.pl.length,ranked:false});
+}
+function onScore(msg){
+  if(!match||msg.sameTab||msg.kind!=="viewer")return;
+  const d=msg.data;
+  if(!d||d.mid!==match.mid||!Array.isArray(d.p)||!Array.isArray(d.t))return;
+  const p=match.players[msg.peer];
+  if(!p)return;
+  p.name=cleanName(d.n);p.av=cleanAv(d.av);
+  p.pts=d.p.slice(0,N).map(x=>Math.max(0,Math.min(1000,Math.round(Number(x)||0))));
+  p.ms=d.t.slice(0,N).map(x=>Math.round(Number(x)||0));
+  refreshStand();
+}
+function emitScore(){
+  if(!match||match.mode!=="multi"||!NR)return;
+  const me=match.players[match.meKey];
+  NR.emit("score",{mid:match.mid,n:SAVE.name,av:SAVE.av,p:me.pts.map(x=>x||0),t:me.ms.map(x=>x==null?-1:x)}).catch(()=>{});
+}
+
+/* ============ 對戰引擎 ============ */
+function startSolo(ranked){
+  ui.err="";fixWager();
+  if(SAVE.coins<ui.wager){ui.err="金幣不足，先到銀行領錢。";ui.screen="home";return render();}
+  const qs=pickQs(ui.subj),rnd=Math.random;
+  const rk=ranked?SAVE.rank:0,lift=0.03*rk,speed=Math.max(.6,1-0.04*rk);
+  const bots=[{name:"椰子蟹",av:"🦀",skill:Math.min(1.05,.88+lift)},{name:"海龜阿龜",av:"🐢",skill:Math.min(.98,.7+lift)}];
+  const players={me:{name:SAVE.name,av:SAVE.av,pts:[],ms:[],pick:[]}};
+  bots.forEach((b,bi)=>{
+    const p={name:b.name,av:b.av,pts:[],ms:[],pick:[],bot:true};
+    qs.forEach(q=>{
+      const ok=rnd()<Math.min(.99,[.95,.8,.62][q.d]*b.skill);
+      const ms=Math.max(900,Math.min(9500,Math.round((1300+rnd()*5200)*(1+q.d*.25)*(bi?1.25:1)*speed)));
+      p.ms.push(ms);p.pts.push(ok?scoreFor(ms):0);
+    });
+    players["bot"+bi]=p;
+  });
+  beginMatch({mode:"solo",mid:"solo"+Date.now(),qs,seed:Math.floor(Math.random()*1e9),players,meKey:"me",wager:ui.wager,pot:ui.wager*3,ranked:!!ranked});
+}
+function beginMatch(m){
+  SAVE.coins-=m.wager;persist();
+  m.t0=performance.now();m.ph="";m.qi=-2;m.rewarded=false;m.reward=null;
+  m.orders=m.qs.map((q,i)=>shuffled([0,1,2,3],m.seed+i*977));
+  match=m;ui.screen="battle";
+  if(NR)setPresence("play");
+  stopTicker();timerId=setInterval(tick,50);
+  tick();
+}
+function stopTicker(){if(timerId){clearInterval(timerId);timerId=null;}}
+function finalizeTo(k){
+  const me=match.players[match.meKey];
+  for(let i=0;i<k&&i<N;i++){if(me.pts[i]==null){me.pts[i]=0;me.ms[i]=-1;me.pick[i]=-1;}}
+}
+function tick(){
+  if(!match)return;
+  const el=performance.now()-match.t0;
+  let ph,qi=-1,within=0;
+  if(el<COUNT){ph="count";within=el;}
+  else{
+    const e2=el-COUNT;qi=Math.floor(e2/CYCLE);
+    if(qi>=N){ph="end";qi=N;}
+    else{within=e2-qi*CYCLE;ph=within<PREVIEW?"preview":within<PREVIEW+ANSWER?"answer":"reveal";}
+  }
+  if(ph!==match.ph||qi!==match.qi){
+    match.ph=ph;match.qi=qi;
+    if(ph==="reveal"){finalizeTo(qi+1);emitScore();}
+    else if(ph==="end"){finalizeTo(N);emitScore();setTimeout(emitScore,600);stopTicker();ui.screen="result";setTimeout(award,1200);}
+    else finalizeTo(qi);
+    render();
+  }
+  if(ph==="end")return;
+  const tm=document.getElementById("tm"),fill=document.getElementById("fill"),live=document.getElementById("live");
+  if(!tm)return;
+  let remain=0,total=1;
+  if(ph==="count"){remain=COUNT-within;total=COUNT;tm.textContent=Math.ceil(remain/1000);}
+  else if(ph==="preview"){remain=PREVIEW-within;total=PREVIEW;tm.textContent=(remain/1000).toFixed(1);}
+  else if(ph==="answer"){const used=within-PREVIEW;remain=ANSWER-used;total=ANSWER;tm.textContent=(Math.max(0,remain)/1000).toFixed(1);if(live)live.textContent=scoreFor(used);}
+  if(fill){fill.style.transform="scaleX("+Math.max(0,Math.min(1,remain/total))+")";fill.classList.toggle("low",ph==="answer"&&remain<3000);}
+}
+function pick(j){
+  const m=match;if(!m||m.ph!=="answer")return;
+  const me=m.players[m.meKey],qi=m.qi;
+  if(me.pts[qi]!=null)return;
+  const ms=Math.max(0,Math.round(performance.now()-(m.t0+COUNT+qi*CYCLE+PREVIEW)));
+  if(ms>ANSWER)return;
+  const orig=m.orders[qi][j];
+  me.pick[qi]=orig;me.ms[qi]=ms;me.pts[qi]=orig===m.qs[qi].a?scoreFor(ms):0;
+  render();
+}
+function totals(m,up){
+  const out=Object.entries(m.players).map(([key,p])=>{
+    let total=0,t=0;
+    for(let i=0;i<=up&&i<N;i++){total+=p.pts[i]||0;t+=(p.ms[i]>0?p.ms[i]:ANSWER);}
+    return {key,name:p.name,av:p.av,total,t,pts:p.pts};
+  });
+  out.sort((a,b)=>b.total-a.total||a.t-b.t);
+  return out;
+}
+function upTo(){return match.ph==="reveal"?match.qi:(match.ph==="end"?N-1:match.qi-1);}
+function standHTML(){
+  const m=match,up=upTo(),list=totals(m,up),max=Math.max(1000,...list.map(x=>x.total));
+  return list.map((x,i)=>`<li class="${x.key===m.meKey?"me":""}"><span class="rk">${i+1}</span><span class="av" aria-hidden="true">${x.av}</span><span class="nm">${esc(x.name)}${x.key===m.meKey?"<em>你</em>":""}</span><span class="trk"><i style="width:${Math.round(x.total/max*100)}%"></i></span><b>${x.total}</b><span class="dl">${m.ph==="reveal"&&x.pts[up]!=null?"+"+x.pts[up]:""}</span></li>`).join("");
+}
+function refreshStand(){const el=document.getElementById("stand");if(el&&match)el.innerHTML=standHTML();if(ui.screen==="result"&&match)renderResult();}
+function renderBattle(){
+  const m=match;if(!m)return;
+  const ph=m.ph,qi=m.qi,me=m.players[m.meKey];
+  const myTotal=totals(m,upTo()).find(x=>x.key===m.meKey);
+  if(ph==="count"){
+    $app.innerHTML=`<div class="card count"><p class="label">準備出發</p><b id="tm">3</b><div class="timer" style="margin-top:16px"><div class="track"><div class="fill" id="fill"></div></div></div></div>
+    <div class="card"><div class="label" style="margin-bottom:10px">本局玩家</div><ul class="stand" id="stand">${standHTML()}</ul></div>`;
+    return;
+  }
+  if(ph==="end")return;
+  const q=m.qs[qi],order=m.orders[qi];
+  const head=`<div class="hud"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="pill">第 ${qi+1} / ${N} 題</span><span class="pill">${SNAME[q.s]}</span><span class="pill">${DNAME[q.d]}</span><span class="pill">獎池 $${m.pot}</span></div><div style="text-align:right"><div class="label">積分</div><div class="score">${myTotal?myTotal.total:0}</div></div></div>`;
+  let body="";
+  const answered=me.pts[qi]!=null;
+  if(ph==="preview"){
+    body=`<div><span class="phase look">看題時間</span></div>
+      <div class="timer"><div class="track"><div class="fill" id="fill"></div></div><span id="tm">5.0</span></div>
+      <div class="card q">${esc(q.q)}</div>
+      <div class="opts" aria-hidden="true">${[0,1,2,3].map(i=>`<div class="opt mask"><span class="L">${"ABCD"[i]}</span><span class="sk"></span></div>`).join("")}</div>
+      <p class="muted">倒數結束後出現選項，先想好答案。</p>`;
+  }else if(ph==="answer"){
+    body=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><span class="phase race">搶答</span><span class="live">現在答對可得 <b id="live">1000</b> 分</span></div>
+      <div class="timer"><div class="track"><div class="fill" id="fill"></div></div><span id="tm">10.0</span></div>
+      <div class="card q">${esc(q.q)}</div>
+      <div class="opts">${order.map((orig,j)=>`<button class="opt ${answered?(me.pick[qi]===orig?"sel":"dim"):""}" data-act="pick" data-j="${j}" ${answered?"disabled":""}><span class="L">${"ABCD"[j]}</span><span>${esc(q.o[orig])}</span></button>`).join("")}</div>
+      ${answered?`<p class="muted">答案已鎖定，等這題時間結束。</p>`:""}`;
+  }else{
+    const ok=me.pick[qi]===q.a,gained=me.pts[qi]||0;
+    body=`<div class="banner ${ok?"ok":"no"}">${me.pick[qi]===-1?"這題沒有作答，0 分":ok?`答對了！+${gained} 分，用時 ${(me.ms[qi]/1000).toFixed(2)} 秒`:"答錯了，0 分"}</div>
+      <div class="card q">${esc(q.q)}</div>
+      <div class="opts">${order.map((orig,j)=>`<div class="opt ${orig===q.a?"right":(me.pick[qi]===orig?"wrong":"dim")}"><span class="L">${"ABCD"[j]}</span><span>${esc(q.o[orig])}</span></div>`).join("")}</div>
+      <p class="muted">${qi<N-1?"下一題馬上開始。":"對戰結束，正在統計成績。"}</p>`;
+  }
+  $app.innerHTML=`${head}${body}<div class="card"><div class="label" style="margin-bottom:10px">即時排名</div><ul class="stand" id="stand">${standHTML()}</ul></div>`;
+}
+function award(){
+  if(!match||match.rewarded)return;
+  const m=match;
+  const list=totals(m,N-1);
+  const rank=list.findIndex(x=>x.key===m.meKey)+1;
+  const total=list[rank-1].total;
+  const win=rank===1;
+  const gain=win?m.pot:0,net=gain-m.wager;
+  const xp=Math.round(total/20)+15+(win?15:0);
+  const before=levelOf(SAVE.xp).lvl;
+  SAVE.coins+=gain;SAVE.xp+=xp;SAVE.games+=1;if(win)SAVE.wins+=1;
+  let rankUp=false;
+  if(m.ranked&&win&&SAVE.rank<RANKS.length-1){SAVE.rw+=1;if(SAVE.rw>=needWins(SAVE.rank)){SAVE.rank+=1;SAVE.rw=0;rankUp=true;}}
+  persist();
+  m.rewarded=true;
+  m.reward={net,gain,xp,rank,total,win,up:levelOf(SAVE.xp).lvl>before,lv:levelOf(SAVE.xp).lvl,rankUp};
+  if(NR)setPresence("play");
+  if(ui.screen==="result")renderResult();
+}
+function renderResult(){
+  const m=match;if(!m)return;
+  const list=totals(m,N-1),me=m.players[m.meKey],r=m.reward;
+  const rows=list.map((x,i)=>`<li class="${x.key===m.meKey?"me":""}"><span class="rk">${i+1}</span><span class="av" aria-hidden="true">${x.av}</span><span class="nm">${esc(x.name)}${x.key===m.meKey?"<em>你</em>":""}</span><span class="trk"><i style="width:${Math.round(x.total/Math.max(1,list[0].total)*100)}%"></i></span><b>${x.total}</b><span class="dl"></span></li>`).join("");
+  const qc=m.qs.map((q,i)=>{const ok=me.pick[i]===q.a;return `<div class="qc ${ok?"ok":"no"}"><b>${me.pts[i]||0}</b>${me.ms[i]>0?(me.ms[i]/1000).toFixed(1)+" 秒":"未答"}</div>`;}).join("");
+  const L=levelOf(SAVE.xp);
+  let reward=`<p class="muted">結算中…</p>`;
+  if(r){
+    const money=r.net>=0?"+$"+r.net:"-$"+(-r.net);
+    let rk="";
+    if(m.ranked){
+      if(r.rankUp)rk=`<div class="up">升段了！晉升到 ${RANKS[SAVE.rank]}</div>`;
+      else if(SAVE.rank>=RANKS.length-1)rk=`<p class="muted">你已經是最高段位 ${RANKS[SAVE.rank]}。</p>`;
+      else rk=`<p class="muted">${r.win?"排位勝場":"這局沒贏，排位勝場不變"}：${SAVE.rw} / ${needWins(SAVE.rank)}，目標 ${RANKS[SAVE.rank+1]}</p>`;
+    }
+    reward=`<div class="tiles"><div class="tile"><b>${r.total}</b><span>本局積分</span></div><div class="tile"><b>${money}</b><span>金幣</span></div><div class="tile"><b>+${r.xp}</b><span>經驗</span></div></div>
+    <div class="banner ${r.win?"ok":"no"}">${r.win?`你拿走全部獎池 $${m.pot}`:`你的賭注 $${m.wager} 被第一名拿走`}</div>
+    ${rk}
+    ${r.up?`<div class="up">升級了！現在是 Lv.${r.lv} ${titleOf(r.lv)}</div>`:`<div class="lv"><span>Lv.${L.lvl} ${titleOf(L.lvl)}</span><span class="xp" style="max-width:none"><i style="width:${Math.round(L.cur/L.need*100)}%"></i></span></div>`}`;
+  }
+  const multi=m.mode==="multi";
+  $app.innerHTML=`<h2>${r?(r.rank===1?"你是第一名！":`你拿到第 ${r.rank} 名`):"對戰結束"}</h2>
+  <div class="card"><div class="label" style="margin-bottom:10px">最終排名</div><ul class="stand" id="stand">${rows}</ul></div>
+  <div class="card" style="display:flex;flex-direction:column;gap:12px"><div class="label">你的每題成績</div><div class="qchips">${qc}</div></div>
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">${reward}</div>
+  <div class="row-btns">${multi?`<button class="btn go" data-act="backlobby" style="font-size:18px">回到房間</button><button class="btn ghost" data-act="leave">離開房間</button>`:`<button class="btn go" data-act="${m.ranked?"ranked":"solo"}" style="font-size:18px">再玩一局</button><button class="btn ghost" data-act="home">回到島上</button>`}</div>`;
+}
+
+/* ============ 事件 ============ */
+$app.addEventListener("click",e=>{
+  const b=e.target.closest("[data-act]");if(!b||b.disabled)return;
+  const a=b.dataset.act;
+  if(a==="pick")return pick(Number(b.dataset.j));
+  if(a==="subj"){ui.subj=b.dataset.k;return render();}
+  if(a==="mode"){ui.mode=b.dataset.m;ui.err="";return render();}
+  if(a==="solo")return startSolo(false);
+  if(a==="ranked")return startSolo(true);
+  if(a==="savenow"){if(CLOUD){dirty=true;clearTimeout(pushT);push();}return;}
+  if(a==="bank"){if(bankLeft()===0){SAVE.coins+=BANK_AMT;SAVE.bankAt=Date.now();persist();}return render();}
+  if(a==="wager"){const w=Number(b.dataset.w);if(WAGERS.includes(w)&&w<=SAVE.coins){ui.wager=w;if(NR)setPresence("lobby");}return render();}
+  if(a==="create"){return joinRoom(genCode());}
+  if(a==="join"){
+    const v=(document.getElementById("code").value||"").trim().toLowerCase();
+    if(!/^[a-z0-9]{3,6}$/.test(v)){ui.code=v;ui.err="房間代碼是 3 到 6 個英文字母或數字。";return render();}
+    return joinRoom(v);
+  }
+  if(a==="startmulti")return hostStart();
+  if(a==="leave")return leaveRoom();
+  if(a==="backlobby"){stopTicker();match=null;ui.screen="lobby";setPresence("lobby");return render();}
+  if(a==="home"){stopTicker();match=null;ui.screen="home";ui.err="";return render();}
+  if(a==="shop"){ui.screen="shop";ui.err="";return render();}
+  if(a==="buy"){
+    const it=AVATARS.find(x=>x.e===b.dataset.e);
+    if(it&&!SAVE.owned.includes(it.e)&&SAVE.coins>=it.p){SAVE.coins-=it.p;SAVE.owned.push(it.e);SAVE.av=it.e;persist();}
+    return render();
+  }
+  if(a==="equip"){if(SAVE.owned.includes(b.dataset.e)){SAVE.av=b.dataset.e;persist();}return render();}
+  if(a==="copy"){
+    const t=ui.code.toUpperCase();
+    try{navigator.clipboard.writeText(t).catch(()=>{});}catch(err){}
+    b.textContent="已複製";setTimeout(()=>{if(b.isConnected)b.textContent="複製代碼";},1200);
+  }
+});
+$app.addEventListener("input",e=>{
+  if(e.target.id==="nm"){SAVE.name=(e.target.value||"").trim().slice(0,8)||"島民";persist();}
+  if(e.target.id==="code")ui.code=e.target.value;
+});
+initCloud();
+setInterval(()=>{
+  if(ui.screen!=="home")return;
+  const el=document.getElementById("bankbtn");if(!el)return;
+  const left=bankLeft(),ready=left===0;
+  if(ready!==(el.dataset.ready==="1"))return render();
+  if(!ready)el.textContent="還要 "+fmtLeft(left);
+},1000);
+render();
+</script>
+
+</body>
+</html>
